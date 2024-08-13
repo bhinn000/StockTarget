@@ -1,42 +1,58 @@
+// frontend/src/components/Dashboard.js
 import React, { useState } from 'react';
 
 function Dashboard() {
-    const [stockName, setStockName] = useState('');
-    const [targetPrice, setTargetPrice] = useState('');
-    const [submittedData, setSubmittedData] = useState(null);
+  const [scriptName, setScriptName] = useState('');
+  const [targetValue, setTargetValue] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setSubmittedData({ stockName, targetPrice });
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token'); 
+    try {
+      const response = await fetch('/api/stockTargets/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ scriptName, targetValue })
+      });
 
-    return (
-        <div className="dashboard-container">
-            <h2>Dashboard</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    placeholder="Stock Name"
-                    value={stockName}
-                    onChange={(e) => setStockName(e.target.value)}
-                />
-                <input
-                    type="text"
-                    placeholder="Target Price"
-                    value={targetPrice}
-                    onChange={(e) => setTargetPrice(e.target.value)}
-                />
-                <button type="submit">Submit</button>
-            </form>
-            {submittedData && (
-                <div className="result">
-                    <h3>Submitted Data:</h3>
-                    <p>Stock Name: {submittedData.stockName}</p>
-                    <p>Target Price: {submittedData.targetPrice}</p>
-                </div>
-            )}
-        </div>
-    );
+      const result = await response.json();
+      if (response.ok) {
+        console.log('Stock target added:', result);
+      } else {
+        console.error('Error:', result);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  return (
+    <div className="dashboard-container">
+      <h2>Dashboard</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          Script Name:
+          <input
+            type="text"
+            value={scriptName}
+            onChange={(e) => setScriptName(e.target.value)}
+          />
+        </label>
+        <label>
+          Target Value:
+          <input
+            type="number"
+            value={targetValue}
+            onChange={(e) => setTargetValue(e.target.value)}
+          />
+        </label>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  );
 }
 
 export default Dashboard;
