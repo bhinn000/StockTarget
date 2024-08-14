@@ -31,4 +31,27 @@ app.get('/', (req, res) => {
   });
 
 
- 
+  async function checkTargets() {
+    try {
+        const targets = await StockTarget.find();
+        console.log('Targets:', targets); // Log targets to ensure they are retrieved
+
+        for (let target of targets) {
+            const priceRecord = await StockPrice.findOne({ symbol: target.scriptName }).sort({ date: -1 });
+            console.log('Price Record:', priceRecord); // Log priceRecord to ensure it is retrieved
+            
+            if (priceRecord && priceRecord.close === target.targetValue) {
+                console.log('I am here');
+                // Optionally, send a notification here
+            }
+        }
+    } catch (error) {
+        console.error('Error checking targets:', error);
+    }
+}
+
+  // Call this function after updating stock prices or at regular intervals
+  checkTargets();
+
+
+
