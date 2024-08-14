@@ -1,17 +1,20 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const stockTargetsRouter = require('./routes/stockTargets'); 
+const stockTargetsRouter = require('./routes/stockTargets');
 const StockTarget = require('./models/StockTarget');
 const StockPrice = require('./models/StockPrice');
 const axios = require('axios');
+const cron = require('node-cron'); // Import node-cron
 
 const app = express();
-const PORT = 8085; 
+const PORT = 8085;
 const uri = process.env.mongouri;
-const bot_token=process.env.bot_token
-const chatId=process.env.chat_id
-console.log(uri)
+const bot_token = process.env.bot_token;
+const chatId = process.env.chat_id;
+console.log(uri);
+const TELEGRAM_API_URL = `https://api.telegram.org/bot${bot_token}/sendMessage`;
+const CHAT_ID = chatId;
 
 // Middleware
 app.use(express.json()); // To parse JSON request bodies
@@ -30,36 +33,7 @@ app.listen(PORT, () => {
 
 app.get('/', (req, res) => {
     res.send('Welcome to the Stock Target API');
-  });
-
-
-//   async function checkTargets() {
-//     try {
-//         const targets = await StockTarget.find();
-//         console.log('Targets:', targets); // Log targets to ensure they are retrieved
-
-//         for (let target of targets) {
-//             const priceRecord = await StockPrice.findOne({ symbol: target.scriptName }).sort({ date: -1 });
-//             console.log('Price Record:', priceRecord); // Log priceRecord to ensure it is retrieved
-            
-//             if (priceRecord && priceRecord.close === target.targetValue) {
-//                 console.log('I am here');
-//                 // Optionally, send a notification here
-//             }
-//         }
-//     } catch (error) {
-//         console.error('Error checking targets:', error);
-//     }
-// }
-
-//   // Call this function after updating stock prices or at regular intervals
-//   checkTargets();
-
-
-
-
-const TELEGRAM_API_URL = `https://api.telegram.org/bot${bot_token}/sendMessage`;
-const CHAT_ID = chatId;
+});
 
 async function sendTelegramMessage(stockName) {
     const message = `The target value you set for ${stockName} has been met.`;
@@ -84,7 +58,7 @@ async function checkTargets() {
             console.log('Price Record:', priceRecord);
 
             if (priceRecord && priceRecord.close === target.targetValue) {
-                console.log('I am here');
+                console.log('Target met for:', target.scriptName);
                 await sendTelegramMessage(target.scriptName);
             }
         }
@@ -93,7 +67,8 @@ async function checkTargets() {
     }
 }
 
-// Call this function after updating stock prices or at regular intervals
-checkTargets();
-
-
+// Schedule the checkTargets function to run every day at 11:15 AM
+cron.schedule('15 11 * * *', () => {
+    console.log('Running scheduled task to check targets...');
+    checkTargets();
+});
