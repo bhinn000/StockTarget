@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const stockTargetsRouter = require('./routes/stockTargets'); 
+const StockTarget = require('./models/StockTarget');
+const StockPrice = require('./models/StockPrice');
+
 
 const app = express();
 const PORT = 8085; 
@@ -28,3 +31,4 @@ app.get('/', (req, res) => {
   });
 
 
+ 
