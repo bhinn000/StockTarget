@@ -4,11 +4,13 @@ const mongoose = require('mongoose');
 const stockTargetsRouter = require('./routes/stockTargets'); 
 const StockTarget = require('./models/StockTarget');
 const StockPrice = require('./models/StockPrice');
-
+const axios = require('axios');
 
 const app = express();
 const PORT = 8085; 
 const uri = process.env.mongouri;
+const bot_token=process.env.bot_token
+const chatId=process.env.chat_id
 console.log(uri)
 
 // Middleware
@@ -31,18 +33,59 @@ app.get('/', (req, res) => {
   });
 
 
-  async function checkTargets() {
+//   async function checkTargets() {
+//     try {
+//         const targets = await StockTarget.find();
+//         console.log('Targets:', targets); // Log targets to ensure they are retrieved
+
+//         for (let target of targets) {
+//             const priceRecord = await StockPrice.findOne({ symbol: target.scriptName }).sort({ date: -1 });
+//             console.log('Price Record:', priceRecord); // Log priceRecord to ensure it is retrieved
+            
+//             if (priceRecord && priceRecord.close === target.targetValue) {
+//                 console.log('I am here');
+//                 // Optionally, send a notification here
+//             }
+//         }
+//     } catch (error) {
+//         console.error('Error checking targets:', error);
+//     }
+// }
+
+//   // Call this function after updating stock prices or at regular intervals
+//   checkTargets();
+
+
+
+
+const TELEGRAM_API_URL = `https://api.telegram.org/bot${bot_token}/sendMessage`;
+const CHAT_ID = chatId;
+
+async function sendTelegramMessage(stockName) {
+    const message = `The target value you set for ${stockName} has been met.`;
+    try {
+        await axios.post(TELEGRAM_API_URL, {
+            chat_id: CHAT_ID,
+            text: message,
+        });
+        console.log(`Message sent to Telegram: ${message}`);
+    } catch (error) {
+        console.error('Error sending message to Telegram:', error);
+    }
+}
+
+async function checkTargets() {
     try {
         const targets = await StockTarget.find();
-        console.log('Targets:', targets); // Log targets to ensure they are retrieved
+        console.log('Targets:', targets);
 
         for (let target of targets) {
             const priceRecord = await StockPrice.findOne({ symbol: target.scriptName }).sort({ date: -1 });
-            console.log('Price Record:', priceRecord); // Log priceRecord to ensure it is retrieved
-            
+            console.log('Price Record:', priceRecord);
+
             if (priceRecord && priceRecord.close === target.targetValue) {
                 console.log('I am here');
-                // Optionally, send a notification here
+                await sendTelegramMessage(target.scriptName);
             }
         }
     } catch (error) {
@@ -50,8 +93,7 @@ app.get('/', (req, res) => {
     }
 }
 
-  // Call this function after updating stock prices or at regular intervals
-  checkTargets();
-
+// Call this function after updating stock prices or at regular intervals
+checkTargets();
 
 
